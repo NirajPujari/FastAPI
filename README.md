@@ -1,12 +1,35 @@
-# Fastapi
+# 🔐Full Secure API for Notes Storage
 
-FastAPI is a modern, fast (high-performance) web framework for building APIs with Python based on standard Python type hints, designed to be asynchronous.
+This project is a secure backend API for a notes storage application built with **FastAPI**, **MongoDB**, and **JWT-based** authentication. It provides complete user authentication and authorization, along with protected CRUD operations for managing personal notes.
 
-## Installation
+The API implements a dual-layer security model:
+- **JWT (Bearer Token)** for user identity and session validation
+- **Per-user API Key** for client-level access control
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the libraries.
+## ✨Key Features
+- User signup and login with hashed passwords
+- JWT-based authentication with token verification
+- Secure logout with token blacklisting
+- Per-user API key generation and validation
+- Create, update (bulk), search, and manage notes
+- Notes scoped strictly to their owner
+- Optional sharing support via user IDs
+- MongoDB schema validation and indexing for performance
+- UTC-based timestamp handling for consistency
 
-    pip install fastapi pymongo pydantic uvicorn
+## 🛡️Security Highlights
+- Passwords stored using bcrypt hashing
+- Stateless JWT authentication
+- API key validation on every protected endpoint
+- Token revocation support via blacklist
+- Ownership checks on all note operations
+
+## ⚙️Installation
+
+Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the libraries
+```bash 
+  pip install -r requirements.txt
+```
 
 ## How to start
 
@@ -22,183 +45,63 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the lib
 
 3. Run the FastAPI application:
     ```bash 
-    uvicorn main:app --reload
+    uvicorn main:app --host 127.0.0.1 --port %PORT% --reload --log-level debug
+    ```
+    or
+    ```bash 
+    ./run
     ```
 
+## 📘API Documentation
 
-## API Documentation
+### 🔐Authentication Endpoints
 
-### Authentication Endpoints
+- **POST** `/signup`: Create a new user account and receive an API key
+- **POST** `/login`: Log in and receive a JWT access token
+- **DELETE** `/logout`: Log out the user using the provided token and key
 
-- **POST** `/api/auth/signup`: Create a new user account.
-- **POST** `/api/auth/login`: Log in to an existing user account and receive an access token.
-- **DELETE** `/api/auth/login/{token}`: Log out the user with the given token.
+### 📝Note Endpoints
 
-### Note Endpoints
+- **GET** `/notes`: Get all notes for the authenticated user
+- **GET** `/notes/{id}`: Get a note by ID
+- **POST** `/notes`: Create a new note
+- **POST** `/notes/bulk`: Create multiple notes
+- **PUT** `/notes/{id}`: Update a note by ID
+- **PUT** `/notes/bulk?ids={id}...`: Update multiple notes by IDs
+- **DELETE** `/notes/{id}`: Delete a note
+- **POST** `/notes/share/{id}/{share_with_user_id}`: Share a note with another user
+- **POST** `/notes/unshare/{id}/{share_with_user_id}`: Remove access to a shared note
+- **GET** `/search?q=:query`: Search notes by title and content
 
-- **GET** `/api/notes`: Get a list of all notes for the authenticated user.
-- **GET** `/api/notes/{id}`: Get a note by ID for the authenticated user.
-- **POST** `/api/notes`: Create a new note for the authenticated user.
-- **PUT** `/api/notes/{id}`: Update an existing note by ID for the authenticated user.
-- **DELETE** `/api/notes/{id}`: Delete a note by ID for the authenticated user.
-- **POST** `/api/notes/{id}/share`: Share a note with another user for the authenticated user.
-- **GET** `/api/search?q=:query`: Search for notes based on keywords for the authenticated user.
-
-
-#### -> For Authentication of the user we can use a api key and login tokens that can be random but for this we can use below api key 
-- **Api Key**:
+### 🔑Authentication Headers
+For authentication, both an API key and a session token are required and are unique per user.
+- **Api Key in the header**:
   ```
-  key : ygyrlTfv7tqVznf
+  x-api-key : <given when sign in>
+  ```
 - **Login Token**:
   ```
-  token : <random for all user>
-## Database Information
-### Database - MongoDB
-- **Type**: NoSQL 
-
-### Database Structure
-- **db**:
-    - **login**: Collection for storing login information.
-    - **signup**: Collection for storing user signup details.
-    - **notes**: Collection for storing notes.
-
-### Reason for MongoDB
-
-- **Schema-less Design**
-- **Scalability**
-- **Document-Oriented**
-- **High Performance**
-- **Community Support**
-- **Adoption**
-
-## Usage Examples(Postman)
-### Authentication Endpoints
-
-**Signup:**
-
-**POST** `/api/auth/signup`
-- **Body**:
-  ```json
-  {
-      "userid": "example",
-      "useremail": "example@example.com",
-      "password": "password"
-  }
-- **Header**:
+  Authorization : Bearer <given when login>
   ```
-  key : ygyrlTfv7tqVznf
-**Log-in:**
 
-**POST** `/api/auth/login`
-- **Body**:
-  ```json
-  {
-      "userid": "example",
-      "password": "password"
-  }
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-**Log-out:**
+**Note:** JWT access tokens are valid for **60 minutes**. Logging out or allowing a token to expire will revoke the token. Once revoked or expired, the token cannot be reused, and a new login is required to issue a fresh token.
+The API key is permanent and does not change across logins.
 
-**DELETE** `/api/auth/login{token}`
-- **Body**:
-  ```json
-  {}
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-### Note Endpoints
+## 🧰Tech Stack
+- **FastAPI** – REST API framework
+- **MongoDB** – Data storage with schema validation
+- **PyMongo** – Database driver
+- **JWT (python-jose)** – Authentication
+- **Passlib (bcrypt)** – Password hashing
 
-**Create Note:**
+## 🗄️Database (MongoDB)
+### Collection
+- **blacklisted_tokens**: Collection for all storing blacklisted tokens which is removed with a index later.
+- **users**: Collection for storing user data.
+- **notes**: Collection for storing user`s notes.
 
-**POST** `/api/notes`
-- **Body**:
-  ```json
-  {
-      "title": "Example Note",
-      "content": "This is an example note."
-  }
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-  token: <logintoken>
-**Fetch Notes:**
+## 📄License
+MIT
 
-**GET** `/api/notes`
-- **Body**:
-  ```json
-  {}
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-  token: <logintoken>
-**Fetch Notes by ID:**
-
-**GET** `/api/notes/{id}`
-- **Body**:
-  ```json
-  {}
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-  token: <logintoken>
-**Update Note by ID:**
-
-**PUT** `/api/notes/{id}`
-- **Body**:
-  ```json
-  {
-      "title": "Update Note Title",
-      "content": "Update note."
-  }
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-  token: <logintoken>
-**Delete Note by ID:**
-
-**DELETE** `/api/notes/{id}`
-- **Body**:
-  ```json
-  {}
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-  token: <logintoken>
-**Share Note:**
-
-**POST** `/api/notes/{id}/share`
-- **Body**:
-  ```json
-  {
-      "touser": "username of person receiving"
-  }
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-  token: <logintoken>
-**Search Note:**
-
-**POST** `/api/search?query=user=example,title=example`
-- **Body**:
-  ```json
-  {}
-- **Header**:
-  ```
-  key : ygyrlTfv7tqVznf
-  token: <logintoken>
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
-
-## Credits
-
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [MongoDB](https://www.mongodb.com/)
-- [PyMongo](https://pymongo.readthedocs.io/)
-- [Uvicorn](https://www.uvicorn.org/)
-- License([MIT License](LICENSE))
+## 👤Authors
+- [@Niraj Pujari](https://github.com/NirajPujari)

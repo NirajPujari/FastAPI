@@ -6,7 +6,7 @@ from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from db import get_collection
 from type.user import Login, SignUp, User
 from util.jwt import create_access_token, verify_access_token
-from util.password import hash_password, verify_hash
+from util.security import hash_password, verify_hash
 from util.key import generate_user_key, key_validiator
 
 router = APIRouter()

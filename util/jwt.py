@@ -40,6 +40,3 @@ def verify_access_token(token: str):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
 
-
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    return verify_access_token(token)
