@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+pymongo==4.15.4
+python-dotenv==1.2.1
