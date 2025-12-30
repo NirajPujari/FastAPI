@@ -12,7 +12,7 @@ app = FastAPI()
 # app.include_router(notes_endpoints.router, prefix="/api/notes")
 
 # Include authentication endpoints
-app.include_router(auth_endpoints, prefix="/api")
+app.include_router(auth_endpoints)
 
 @app.get("/")
 def read_root():

@@ -1,13 +1,17 @@
 from datetime import datetime, timezone
+from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Header
+from fastapi.params import Depends
+from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
 from db import get_collection
-from type.user import Login, SignUp
+from type.user import Login, SignUp, User
 from util.jwt import create_access_token, verify_access_token
 from util.password import hash_password, verify_hash
-from util.key import key_validiator
+from util.key import generate_user_key, key_validiator
 
 router = APIRouter()
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+api_key_scheme = APIKeyHeader(name="X-API-Key")
 
 @router.post("/signup")
 async def create_user(user: SignUp):
@@ -17,45 +21,56 @@ async def create_user(user: SignUp):
         raise HTTPException(status_code=409, detail="User already exists.")
 
     user_dict = user.model_dump()
-    user_dict["password"] = hash_password(user_dict["password"])
+    hassedPassword = hash_password(user_dict["password"])
+    time = datetime.now(timezone.utc)
 
-    user_dict.update(
-        {
-            "is_active": True,
-            "is_logged_in": False,
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": None,
-            "last_login": None,
-            "key": user_dict["password"] + str(datetime.now(timezone.utc)),
-        }
+    new_User = User(
+        email=user_dict["email"],
+        password_hash=hassedPassword,
+        is_active=True,
+        is_logged_in=False,
+        created_at=time,
+        updated_at=None,
+        last_login=None,
+        key=generate_user_key(),
     )
-    users.insert_one(user_dict)
+
+    result = users.insert_one(new_User.model_dump(exclude={"id"}))
     return {
-        "key": user_dict["key"],
+        "key": new_User.key,
+        "id": str(result.inserted_id),
         "message": "User created successfully",
     }
 
 
 @router.post("/login")
-async def login(user: Login, key: str = Header(None)):
+async def login(user: Login, key: str = Depends(api_key_scheme)):
     if not key_validiator(key):
         raise HTTPException(status_code=401, detail="Unauthorized access.")
 
     users = get_collection("users")
-    db_user = users.find_one({"email": user.email})
-
-    if not db_user or not verify_hash(user.password, db_user["password"]):
+    raw_user = users.find_one({"email": user.email})
+    if not raw_user:
         raise HTTPException(status_code=401, detail="Invalid credentials.")
+    db_user = User(id=str(raw_user["_id"]), **raw_user)
+    if not verify_hash(user.password, db_user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials.")
+    if db_user.is_logged_in:
+        raise HTTPException(status_code=400, detail="User already logged in.")
+    
+    print(db_user.id)
+
     token = create_access_token(
         {
-            "sub": str(db_user["_id"]),
-            "email": db_user["email"],
+            "sub": str(db_user.id),
+            "email": db_user.email,
         }
     )
-    users.update_one(
-        {"_id": db_user["_id"]},
+    result = users.update_one(
+        {"_id": raw_user["_id"]},
         {"$set": {"last_login": datetime.now(timezone.utc), "is_logged_in": True}},
     )
+    print(result)
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -64,14 +79,15 @@ async def login(user: Login, key: str = Header(None)):
 
 # Endpoint to logout a user
 @router.post("/logout")
-async def logout(token: str, key: str = Header(None)):
+async def logout(token: str = Depends(oauth2_scheme), key: str = Depends(api_key_scheme)):
+    print(token, "\n", key)
     if not key_validiator(key):
         raise HTTPException(status_code=401, detail="Unauthorized access.")
-
+    
+    payload = verify_access_token(token)
     users = get_collection("users")
     blacklisted = get_collection("blacklisted_tokens")
-    payload = verify_access_token(token)
-    users.update_one({"key": key}, {"$set": {"is_logged_in": False}})
+    users.update_one({"_id": ObjectId(payload["sub"])}, {"$set": {"is_logged_in": False}})
     blacklisted.insert_one(
         {
             "token": token,
