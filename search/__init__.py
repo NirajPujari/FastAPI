@@ -1,7 +1,8 @@
-from http.client import HTTPException
+from fastapi import HTTPException
 from fastapi import APIRouter
 from fastapi.params import Depends
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
+
 from db import get_collection
 from util.security import verify_access
 
@@ -13,7 +14,7 @@ api_key_scheme = APIKeyHeader(name="X-API-Key")
 
 # Endpoint to search the notes
 @router.get("/")
-async def search_notes(
+def search_notes(
     q: str,
     token: str = Depends(oauth2_scheme),
     key: str = Depends(api_key_scheme),

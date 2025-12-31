@@ -3,11 +3,19 @@ from datetime import datetime
 from typing import Optional
 
 class User(BaseModel):
-    id: Optional[  str] = None
+    id: Optional[str] = None
     email: EmailStr
     password_hash: str
     is_active: bool = True
     is_logged_in: bool = False
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    key: str
+
+class GetUser(BaseModel):
+    id: str
+    email: EmailStr
     created_at: datetime
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
@@ -20,3 +28,7 @@ class SignUp(BaseModel):
 class Login(BaseModel):
     email: EmailStr
     password: str
+    
+class UpdateUser(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None

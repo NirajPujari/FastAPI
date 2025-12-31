@@ -1,12 +1,13 @@
 import sys
 import time
 import atexit
-from type.db import CollectionName
 from typing import Optional
-from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from pymongo.server_api import ServerApi
+from type.db import CollectionName
+
+from dotenv import load_dotenv
 from util import _get_env, logger
 
 # Load .env early

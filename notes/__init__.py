@@ -3,8 +3,9 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 from fastapi.security import APIKeyHeader, OAuth2PasswordBearer
-from db import get_collection
 from type.notes import Note, NoteCreate, NoteUpdate
+
+from db import get_collection
 from util.security import verify_access
 
 router = APIRouter()
@@ -14,7 +15,7 @@ api_key_scheme = APIKeyHeader(name="X-API-Key")
 
 # Endpoint to create a new note
 @router.post("")
-async def create_note(
+def create_note(
     note: NoteCreate,
     token: str = Depends(oauth2_scheme),
     key: str = Depends(api_key_scheme),
@@ -38,7 +39,7 @@ async def create_note(
 
 # Endpoint to create a new notes
 @router.post("/bulk")
-async def create_notes(
+def create_notes(
     note: list[NoteCreate],
     token: str = Depends(oauth2_scheme),
     key: str = Depends(api_key_scheme),
@@ -66,7 +67,7 @@ async def create_notes(
 
 # Endpoint to fetch a specific note by ID
 @router.get("/{id}")
-async def get_note(
+def get_note(
     id: str, token: str = Depends(oauth2_scheme), key: str = Depends(api_key_scheme)
 ):
     user_id = verify_access(token, key)
@@ -83,7 +84,7 @@ async def get_note(
 
 # Endpoint to fetch all the notes
 @router.get("")
-async def get_notes(
+def get_notes(
     token: str = Depends(oauth2_scheme), key: str = Depends(api_key_scheme)
 ):
     user_id = verify_access(token, key)
@@ -103,7 +104,7 @@ async def get_notes(
 
 # Endpoint to update a specific note by ID
 @router.put("/{id}")
-async def update_note(
+def update_note(
     id: str,
     note: NoteUpdate,
     token: str = Depends(oauth2_scheme),
@@ -155,7 +156,7 @@ async def update_note(
 
 # Endpoint to update notes in bulk
 @router.put("/bulk")
-async def update_notes(
+def update_notes(
     notes: list[NoteUpdate],
     ids: list[str],
     token: str = Depends(oauth2_scheme),
@@ -218,7 +219,7 @@ async def update_notes(
 
 # Endpoint to delete a specific note by ID
 @router.delete("/{id}")
-async def delete_note(
+def delete_note(
     id: str, token: str = Depends(oauth2_scheme), key: str = Depends(api_key_scheme)
 ):
     user_id = verify_access(token, key)
@@ -233,7 +234,7 @@ async def delete_note(
 
 # Endpoint to note between user
 @router.post("/share/{id}/{share_with_user_id}")
-async def share_note(
+def share_note(
     id: str,
     share_with_user_id: str,
     token: str = Depends(oauth2_scheme),
@@ -266,7 +267,7 @@ async def share_note(
 
 # Endpoint to remove sharing of note between user
 @router.post("/unshare/{id}/{share_with_user_id}")
-async def unshare_note(
+def unshare_note(
     id: str,
     share_with_user_id: str,
     token: str = Depends(oauth2_scheme),
